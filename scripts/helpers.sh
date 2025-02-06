@@ -105,7 +105,7 @@ resurrect_dir() {
 		echo "$_RESURRECT_DIR"
 	fi
 }
-_RESURRECT_DIR="$(resurrect_dir)"
+_RESURRECT_DIR="$(resurrect_dir)/$(basename "${TMUX%%,*}")"
 
 resurrect_file_path() {
 	if [ -z "$_RESURRECT_FILE_PATH" ]; then
