@@ -163,7 +163,7 @@ dump_grouped_sessions() {
 		grep "^1" |
 		cut -c 3- |
 		sort |
-		while IFS=$d read session_group session_id session_name; do
+		while IFS=$d read -r session_group session_id session_name; do
 			if [ "$session_group" != "$current_session_group" ]; then
 				# this session is the original/first session in the group
 				original_session="$session_name"
@@ -187,22 +187,23 @@ fetch_and_dump_grouped_sessions(){
 
 # translates pane pid to process command running inside a pane
 dump_panes() {
-	local full_command
+	local full_command strategy_file
+	strategy_file="$(_save_command_strategy_file)"
 	dump_panes_raw |
-		while IFS=$d read line_type session_name window_number window_active window_flags pane_index pane_title dir pane_active pane_command pane_pid history_size; do
+		while IFS=$d read -r line_type session_name window_number window_active window_flags pane_index pane_title dir pane_active pane_command pane_pid history_size; do
 			# not saving panes from grouped sessions
 			if is_session_grouped "$session_name"; then
 				continue
 			fi
-			full_command="$(pane_full_command $pane_pid)"
-			dir=$(echo $dir | sed 's/ /\\ /') # escape all spaces in directory path
+			full_command="$("$strategy_file" "$pane_pid")"
+			dir="${dir// /\\ }"
 			echo "${line_type}${d}${session_name}${d}${window_number}${d}${window_active}${d}${window_flags}${d}${pane_index}${d}${pane_title}${d}${dir}${d}${pane_active}${d}${pane_command}${d}:${full_command}"
 		done
 }
 
 dump_windows() {
 	dump_windows_raw |
-		while IFS=$d read line_type session_name window_index window_name window_active window_flags window_layout; do
+		while IFS=$d read -r line_type session_name window_index window_name window_active window_flags window_layout; do
 			# not saving windows from grouped sessions
 			if is_session_grouped "$session_name"; then
 				continue
@@ -221,7 +222,7 @@ dump_state() {
 dump_pane_contents() {
 	local pane_contents_area="$(get_tmux_option "$pane_contents_area_option" "$default_pane_contents_area")"
 	dump_panes_raw |
-		while IFS=$d read line_type session_name window_number window_active window_flags pane_index pane_title dir pane_active pane_command pane_pid history_size; do
+		while IFS=$d read -r line_type session_name window_number window_active window_flags pane_index pane_title dir pane_active pane_command pane_pid history_size; do
 			capture_pane_contents "${session_name}:${window_number}.${pane_index}" "$history_size" "$pane_contents_area"
 		done
 }
